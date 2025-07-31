@@ -1,2 +1,2 @@
 # stock_analyzer
-PERN
+PERN stack project that includes a stock dashboard.
