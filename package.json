@@ -1,0 +1,20 @@
+{
+  "name": "stock_analyzer",
+  "version": "1.0.0",
+  "description": "PERN stack project that includes a stock dashboard.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/riddhi-mn/stock_analyzer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/riddhi-mn/stock_analyzer/issues"
+  },
+  "homepage": "https://github.com/riddhi-mn/stock_analyzer#readme"
+}
