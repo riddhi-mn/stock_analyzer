@@ -7,10 +7,28 @@ router.get('/:ticker', async (req, res) => {
   const { ticker } = req.params;
 
   try {
-    const prices = await knex('prices')
+   /**  const prices = await knex('prices')
       .select('timestamp', 'open', 'high', 'low', 'close')
       .where({ ticker })
-      .orderBy('timestamp', 'asc');
+      .orderBy('timestamp', 'asc'); */
+    
+      // Fetch prices with moving average, WINDOW FUNCTION
+      const prices = await knex('prices')
+  .select(
+    'timestamp',
+    'open',
+    'high',
+    'low',
+    'close',
+    knex.raw(`
+      ROUND(AVG(close) OVER (
+        ORDER BY timestamp
+        ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
+      )::numeric, 2) as moving_avg_30
+    `)
+  )
+  .where({ ticker })
+  .orderBy('timestamp', 'asc');
 
     res.json(prices);
   } catch (err) {
