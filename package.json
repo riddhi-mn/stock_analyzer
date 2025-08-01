@@ -5,11 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-      "start": "node src/app.js",
-  "dev": "nodemon src/app.js",
-  "migrate": "npx knex migrate:latest",
-  "migrate:rollback": "npx knex migrate:rollback"
-
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "migrate": "npx knex migrate:latest",
+    "migrate:rollback": "npx knex migrate:rollback"
   },
   "repository": {
     "type": "git",
@@ -23,11 +22,14 @@
   },
   "homepage": "https://github.com/riddhi-mn/stock_analyzer#readme",
   "dependencies": {
+    "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "finnhub": "^2.0.7",
     "jsonwebtoken": "^9.0.2",
+    "node-cron": "^4.2.1",
     "pg": "^8.16.3"
   },
   "devDependencies": {

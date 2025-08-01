@@ -19,13 +19,20 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ error: 'Ticker is required as a string' });
     }
 
+    // before normalizing to uppercase
+if (!/^[A-Z]{1,10}(?:\.NS)?$/.test(ticker)) {
+  return res.status(400).json({ 
+    error: 'Ticker must be 1-10 letters' 
+  });
+}
+
     // 2. Normalize to uppercase & trim whitespace
     ticker = ticker.trim().toUpperCase();
 
     // 3. Basic format check: letters only, 1–5 chars
-    if (!/^[A-Z]{1,5}$/.test(ticker)) {
-      return res.status(400).json({ error: 'Ticker must be 1-5 letters only' });
-    }
+    //if (!/^[A-Z]{1,5}$/.test(ticker)) {
+     // return res.status(400).json({ error: 'Ticker must be 1-5 letters only' });
+    //}
 
     // 4. Insert into database
     await knex('watchlists').insert({
