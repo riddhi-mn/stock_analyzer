@@ -11,8 +11,17 @@ app.use(express.json());
 const authRouter = require('./routes/auth');
 const meRouter   = require('./routes/me');
 
+// src/app.js
+
+const watchlistRouter = require('./routes/watchlist');  // ← add this
+
+
 app.use('/api', authRouter);
 app.use('/api', meRouter);
+
+// Mount the watchlist router
+app.use('/api/watchlist', watchlistRouter);  // ← mount here
+
 
 app.get('/health', (_req, res) => res.json({ status: 'OK' }));
 
