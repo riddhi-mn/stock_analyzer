@@ -9,7 +9,7 @@ const router  = express.Router();
 // GET  /api/watchlist       ← to list all tickers
 // DELETE /api/watchlist/:ticker  ← to remove one
 
-// Add ticker to watchlist
+//POST- Add ticker to watchlist
 router.post('/', auth, async (req, res) => {
   try {
     let { ticker } = req.body;
@@ -36,7 +36,6 @@ router.post('/', auth, async (req, res) => {
     // 5. Return success
     return res.status(201).json({ ticker });
   } catch (err) {
-    // Handle duplicate (unique constraint) error
     if (err.code === '23505') {
       return res.status(400).json({ error: 'Ticker already in your watchlist' });
     }
@@ -44,6 +43,47 @@ router.post('/', auth, async (req, res) => {
     return res.status(500).json({ error: 'Server error' });
   }
 });
+
+//GET- List all tickers in the user's watchlist
+router.get('/', auth, async (req, res) => {
+  try {
+    const entries = await knex('watchlists')
+      .where({ user_id: req.user.id })
+      .select('ticker', 'created_at');
+
+    // Return an array of { ticker, created_at }
+    return res.json(entries);
+  } catch (err) {
+    console.error('Error fetching watchlist:', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+//DELETE - Remove a ticker from the watchlist
+
+// Remove a ticker from the user's watchlist
+router.delete('/:ticker', auth, async (req, res) => {
+  try {
+    const ticker = req.params.ticker.toUpperCase();
+
+    // Attempt to delete the entry
+    const count = await knex('watchlists')
+      .where({ user_id: req.user.id, ticker })
+      .del();
+
+    // If nothing was deleted, the ticker was not found
+    if (!count) {
+      return res.status(404).json({ error: 'Ticker not found in your watchlist' });
+    }
+
+    // Return the removed ticker
+    return res.json({ removed: ticker });
+  } catch (err) {
+    console.error('Error deleting from watchlist:', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 
 module.exports = router;
