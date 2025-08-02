@@ -32,7 +32,7 @@
     app.use('/api', meRouter);
 
     const analyticsRouter = require('./routes/analytics');
-app.use('/api/analytics', analyticsRouter);
+    app.use('/api/analytics', analyticsRouter);
 
 
     // Mount the watchlist router

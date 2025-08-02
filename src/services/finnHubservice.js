@@ -4,7 +4,7 @@ const axios = require('axios');
 const FINNHUB_BASE = 'https://finnhub.io/api/v1';
 const API_KEY = process.env.FINNHUB_API_KEY;
 
-console.log('→ FINNHUB_API_KEY:', API_KEY);
+//console.log('→ FINNHUB_API_KEY:', API_KEY);
 
 // Fetch OHLCV for a single ticker over the past day
 async function fetchOHLCV(ticker) {
