@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Register from './components/Register';
 import Login from './components/Login';
-//import Dashboard from './components/Dashboard'; // will build later
+import Dashboard from './components/Dashboard';
+//import PricePage from './components/PricePage'; // now included
 import { useAuth } from './hooks/useAuth';
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
         ) : (
           <>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/prices/:ticker" element={<PricePage />} />
             <Route path="*" element={<Navigate to="/" />} />
           </>
         )}
