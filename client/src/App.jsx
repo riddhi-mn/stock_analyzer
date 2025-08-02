@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Register from './components/Register';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
-//import PricePage from './components/PricePage'; // now included
+import PricePage from './components/PricePage'; 
 import { useAuth } from './hooks/useAuth';
 
 export default function App() {
