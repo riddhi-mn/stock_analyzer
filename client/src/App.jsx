@@ -19,7 +19,7 @@ export default function App() {
           </>
         ) : (
           <>
-            <Route path="/" element={<Dashboard />} />
+             <Route path="/" element={<Dashboard />} /> 
             <Route path="/prices/:ticker" element={<PricePage />} />
             <Route path="*" element={<Navigate to="/" />} />
           </>
