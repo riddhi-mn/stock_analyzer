@@ -1,23 +1,26 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = (req, res, next) => {
-  const authHeader = req.headers.authorization || '';
-  const token      = authHeader.split(' ')[1];
+  const headerToken = req.headers.authorization?.split(' ')[1];
+  const queryToken = req.query.token;
+  const bodyToken = req.body?.token;
 
-  //console.log('→ AUTH HEADER:', authHeader);
-  //console.log('→ TOKEN:', token);
-  //console.log('→ JWT_SECRET:', process.env.JWT_SECRET);
+  console.log("Header token:", headerToken);
+  console.log("Query token:", queryToken);
+  console.log("Body token:", bodyToken);
+
+  const token = headerToken || queryToken || bodyToken;
 
   if (!token) {
-    return res.status(401).json({ error: 'No token' });
+    return res.status(401).json({ error: 'No token provided' });
   }
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = payload;
-    return next();  
+    req.user = payload; // attach user info to request
+    next();
   } catch (e) {
-    console.error('→ jwt.verify error:', e.message);
+    console.error('JWT verify error:', e.message);
     return res.status(401).json({ error: 'Invalid token' });
   }
 };

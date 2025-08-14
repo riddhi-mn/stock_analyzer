@@ -14,7 +14,7 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    API.get('/watchlists')
+    API.get('/watchlist')
       .then(res => setTickers(res.data))
       .catch(err => setError(err.response?.data?.error || 'Failed to load'))
       .finally(() => setLoading(false));

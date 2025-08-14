@@ -1,0 +1,77 @@
+.ticker-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.ticker-title {
+  font-size: 2.25rem; /* Tailwind text-4xl */
+  font-weight: 700; /* font-bold */
+}
+
+.price-section {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.current-price {
+  font-size: 1.875rem; /* text-3xl */
+  font-weight: 700;
+  color: #22d3ee; /* cyan-400 */
+  margin-bottom: 15px;
+}
+
+.price-change {
+  font-size: 1.125rem; /* text-lg */
+  font-weight: 600;
+}
+
+.price-change.positive {
+  color: #34d399; /* emerald-400 */
+}
+
+.price-change.negative {
+  color: #f87171; /* red-400 */
+}
+
+.subtitle {
+  color: #cbd5e1; /* slate-300 */
+  font-size: 1.125rem;
+  text-align: center;
+}
+
+.chart-container {
+  background-color: #1e293b; /* slate-800 */
+  border-radius: 0.75rem;
+   margin-bottom: 20px;
+   margin-top: 20px;
+  border: 1px solid #334155; /* slate-700 */
+  padding: 1.5rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-btn-container {
+  text-align: right;
+}
+
+.back-btn {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #5b21b6; /* violet-800 */
+  color: white;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.back-btn:hover {
+  background-color: #c4b5fd; /* violet-300 */
+  color: black;
+}

@@ -4,6 +4,7 @@ import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import PricePage from './components/PricePage'; 
 import { useAuth } from './hooks/useAuth';
+import Watchlist from './components/Watchlist';
 
 export default function App() {
   const { token } = useAuth();
@@ -19,7 +20,7 @@ export default function App() {
           </>
         ) : (
           <>
-             <Route path="/" element={<Dashboard />} /> 
+             <Route path="/" element={<Watchlist />} /> 
             <Route path="/prices/:ticker" element={<PricePage />} />
             <Route path="*" element={<Navigate to="/" />} />
           </>

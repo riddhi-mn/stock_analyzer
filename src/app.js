@@ -1,98 +1,128 @@
-    require('dotenv').config();
-    //console.log('→ JWT_SECRET:', process.env.JWT_SECRET);
+// src/app.js
+require('dotenv').config();
 
-    const express = require('express');
-    const cors = require('cors');
+const express = require('express');
+const cors = require('cors');
+const cron = require('node-cron');
+const knex = require('./db/knex');
+const { fetchQuote } = require('./services/finnHubservice');
 
-    const cron     = require('node-cron');
-    const { fetchQuote } = require('./services/finnHubservice'); // or your renamed service
-    const knex     = require('./db/knex');
+// routers
+const watchlistStreamRouter = require('./routes/watchlistStream');
+//const watchlistsRouter = require('./routes/watchlist'); // your REST watchlist routes
+const authRouter = require('./routes/auth');
+const meRouter = require('./routes/me');
+const priceRoutes = require('./routes/prices');
+const analyticsRouter = require('./routes/analytics');
 
-    const lastClose = {};
+// sse broadcaster (for programmatic broadcasts)
+const { broadcastToTicker } = require('./services/sseBroadcaster');
+const { broadcastToUser } = require('./services/sseBroadcaster');
 
-    const app = express();
-    app.use(cors());
-    app.use(express.json());
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-    const authRouter = require('./routes/auth');
-    const meRouter   = require('./routes/me');
+const auth = require('./middleware/auth'); // ✅ make sure it's the middleware one
+//app.use('/api/watchlists', auth, require('./routes/watchlists'));
 
-    const priceRoutes = require('./routes/prices');
-    app.use('/api/prices', priceRoutes);
+// mount API routes
+app.use('/api/prices', priceRoutes);
 
-    // src/app.js
+//app.use('/api/watchlists', auth, watchlistsRouter);      // ✅ protect all REST watchlist endpoints
+app.use('/api/watchlists', auth, watchlistStreamRouter);
 
-    //const watchlistRouter = require('./routes/watchlists');  // ← add this
+app.use('/api', authRouter);
+app.use('/api', meRouter);
+app.use('/api/analytics', analyticsRouter);
 
-    const watchlistsRouter = require('./routes/watchlists');
+app.get('/health', (_req, res) => res.json({ status: 'OK' }));
 
-    app.use('/api/watchlists', watchlistsRouter);
+// Debug broadcast endpoint (dev friendly)
+const allowDebug = (process.env.NODE_ENV !== 'production') || process.env.ENABLE_DEBUG_BROADCAST === 'true';
+if (allowDebug) {
+  // This endpoint simply broadcasts to subscribers of the given ticker.
+  app.post('/debug/broadcast', (req, res) => {
+    const { ticker, price, timestamp } = req.body || {};
+    if (!ticker) return res.status(400).json({ error: 'ticker required' });
 
-    app.use('/api', authRouter);
-    app.use('/api', meRouter);
+    const payload = {
+      ticker: String(ticker).toUpperCase(),
+      price: typeof price === 'number' ? price : null,
+      timestamp: timestamp || new Date().toISOString()
+    };
 
-    const analyticsRouter = require('./routes/analytics');
-    app.use('/api/analytics', analyticsRouter);
-
-
-    // Mount the watchlist router
-    //app.use('/api/watchlists', watchlistsRouter);  // ← mount here
-
-
-    app.get('/health', (_req, res) => res.json({ status: 'OK' }));
-
-    const PORT = process.env.PORT || 4000;
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
-    //CRON JOB TO POLL PRICES
-    // Schedule a task every 30 seconds
-    cron.schedule('*/30 * * * * *', async () => {
     try {
-        console.log('Polling prices at', new Date().toISOString());
+      broadcastToTicker(payload.ticker, payload);
+      console.log(`[DEBUG] broadcastToTicker ${payload.ticker}`, payload);
+      return res.json({ ok: true, payload });
+    } catch (err) {
+      console.error('Debug broadcast error:', err);
+      return res.status(500).json({ ok: false, error: err.message });
+    }
+  });
 
-        // 1. Get all unique tickers across all watchlists
-        const rows = await knex('watchlists')
-        .distinct('ticker')
-        .select('ticker');
+  console.log('DEBUG: /debug/broadcast enabled');
+}
 
-        // 2. For each ticker, fetch quote and insert into prices
-        for (const row of rows) {
-        const { ticker } = row;
-        try {  
-            const quote = await fetchQuote(ticker);
-           /**  await knex('prices').insert({
-            ticker:    quote.ticker,
+// track last close per ticker (normalized uppercase)
+const lastClose = {};
+
+// Poll prices every 10 seconds (dev) — adjust frequency for production/limits
+cron.schedule('*/10 * * * * *', async () => {
+  try {
+    console.log('Polling prices at', new Date().toISOString());
+
+    const rows = await knex('watchlists').distinct('ticker').select('ticker');
+
+    for (const row of rows) {
+      const rawTicker = row.ticker;
+      const tk = String(rawTicker).toUpperCase();
+
+      try {
+        const quote = await fetchQuote(tk);
+        if (!quote || typeof quote.close === 'undefined') {
+          console.warn('fetchQuote returned no close for', tk);
+          continue;
+        }
+
+        if (lastClose[tk] !== quote.close) {
+          // persist price
+          await knex('prices').insert({
+            ticker:    tk,
             timestamp: quote.timestamp,
             open:      quote.open,
             high:      quote.high,
             low:       quote.low,
             close:     quote.close,
-            volume:    quote.volume // ?? 0     // may be null on free tier
-            }); **/
-            // Only insert if the close price has changed since last time
-    if (lastClose[ticker] !== quote.close) {
-    await knex('prices').insert({
-        ticker:    quote.ticker,
-        timestamp: quote.timestamp,
-        open:      quote.open,
-        high:      quote.high,
-        low:       quote.low,
-        close:     quote.close,
-        volume:    quote.volume
-    });
-    console.log(`Inserted new price for ${ticker}:`, quote.close);
-    // Update cache
-    lastClose[ticker] = quote.close;
-    } else {
-    console.log(`No change for ${ticker} (still ${quote.close}), skipping insert.`);
-    }
+            volume:    quote.volume
+          });
+          lastClose[tk] = quote.close;
+          console.log(`Inserted new price for ${tk}:`, quote.close);
 
-        } catch (err) {
-            console.error(`Error fetching/inserting for ${ticker}:`, err.message);
+          // broadcast to any subscribers of this ticker
+          try {
+            broadcastToTicker(tk, {
+              action: 'price',
+              ticker: tk,
+              price: quote.close,
+              timestamp: quote.timestamp
+            });
+          } catch (e) {
+            console.error('broadcastToTicker failed:', e);
+          }
+        } else {
+          // no change
         }
-        }
-    } catch (err) {
-        console.error('Error in price polling job:', err);
+      } catch (err) {
+        console.error(`Error fetching/inserting for ${tk}:`, err && err.message ? err.message : err);
+      }
     }
-    });
+  } catch (err) {
+    console.error('Error in price polling job:', err);
+  }
+});
+
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
