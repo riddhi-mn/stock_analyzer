@@ -1,15 +1,26 @@
 // src/app.js
 require('dotenv').config();
-
 const express = require('express');
 const cors = require('cors');
 const cron = require('node-cron');
 const knex = require('./db/knex');
 const { fetchQuote } = require('./services/finnHubservice');
+const cookieParser = require('cookie-parser');
+
+const app = express(); // ✅ declare first
+
+app.use(cookieParser());
+
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));
+
+
+
 
 // routers
 const watchlistStreamRouter = require('./routes/watchlistStream');
-//const watchlistsRouter = require('./routes/watchlist'); // your REST watchlist routes
 const authRouter = require('./routes/auth');
 const meRouter = require('./routes/me');
 const priceRoutes = require('./routes/prices');
@@ -19,22 +30,17 @@ const analyticsRouter = require('./routes/analytics');
 const { broadcastToTicker } = require('./services/sseBroadcaster');
 const { broadcastToUser } = require('./services/sseBroadcaster');
 
-const app = express();
-app.use(cors());
+
+//app.use(express.json());
 app.use(express.json());
-
-const auth = require('./middleware/auth'); // ✅ make sure it's the middleware one
-//app.use('/api/watchlists', auth, require('./routes/watchlists'));
-
 // mount API routes
+app.use('/api/auth', authRouter);
 app.use('/api/prices', priceRoutes);
-
-//app.use('/api/watchlists', auth, watchlistsRouter);      // ✅ protect all REST watchlist endpoints
-app.use('/api/watchlists', auth, watchlistStreamRouter);
-
-app.use('/api', authRouter);
 app.use('/api', meRouter);
 app.use('/api/analytics', analyticsRouter);
+
+const auth = require('./middleware/auth'); //middleware
+app.use('/api/watchlists', auth, watchlistStreamRouter);
 
 app.get('/health', (_req, res) => res.json({ status: 'OK' }));
 

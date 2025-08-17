@@ -1,76 +1,82 @@
-// client/src/hooks/useSSE.js
 import { useEffect, useRef } from 'react';
+import API from '../api/index.js'; // Axios instance
+import { API_BASE } from '../api/index.js'; // Base URL
 
-export default function useSSE({ url, onSnapshot, onPriceUpdate, onStatus }) {
-  const esRef = useRef(null);
+function parseJwt(token) {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch {
+    return null;
+  }
+}
+
+function isTokenExpired(token) {
+  const decoded = parseJwt(token);
+  return !decoded || decoded.exp * 1000 < Date.now();
+}
+
+export default function useSSE(relativeUrl, token, onMessage) {
+  const eventSourceRef = useRef(null);
 
   useEffect(() => {
-    if (!url) return;
+    let active = true;
 
-    // Try to get token from localStorage, sessionStorage, or cookies
-    let token =
-      localStorage.getItem('token') ||
-      sessionStorage.getItem('token') ||
-      (document.cookie.match(/(?:^|; )token=([^;]*)/)?.[1]);
+    async function getValidToken() {
+      if (!token || isTokenExpired(token)) {
+        const res = await fetch(`${API_BASE}/auth/refresh`, {
+          method: 'POST',
+          credentials: 'include' // send refreshToken cookie
+        });
 
-    if (token) {
-      // Append token if not already in URL
-      const separator = url.includes('?') ? '&' : '?';
-      if (!url.includes('token=')) {
-        url = `${url}${separator}token=${encodeURIComponent(token)}`;
+        if (!res.ok) throw new Error('Refresh failed');
+
+        const data = await res.json();
+        token = data.accessToken; // must match backend naming
+        localStorage.setItem('token', token);
       }
-      console.log("[SSE URL]", url);
-
+      return token;
     }
 
-    const es = new EventSource(url);
-    esRef.current = es;
-
-    es.onopen = () => {
-      console.log('[SSE] Connected to', url);
-      onStatus?.({ connected: true });
-    };
-
-    es.onerror = (err) => {
-      console.error('[SSE] Connection error:', err);
-      onStatus?.({ connected: false, error: err });
-      // EventSource will try to reconnect automatically
-    };
-
-    es.addEventListener('snapshot', (evt) => {
-  try {
-    const payload = JSON.parse(evt.data);
-    console.log("[SNAPSHOT EVENT RAW]", payload);
-    onSnapshot?.(payload);
-  } catch (e) {
-    console.error('[SSE] Snapshot parse error:', e);
-  }
-});
-
-    es.addEventListener('price', (evt) => {
-  try {
-    console.log("[PRICE EVENT RAW]", evt.data);
-    onPriceUpdate?.(JSON.parse(evt.data));
-  } catch (e) {
-    console.error('[SSE] Price update parse error:', e);
-  }
-});
-
-es.addEventListener('ping', () => {
-  console.log('[HEARTBEAT] Connection is alive');
-});
-
-    es.addEventListener('subscriptionUpdate', (evt) => {
-      // optional: handle subscription changes
-    });
-
-    
-
-    return () => {
+    async function connect() {
       try {
-        es.close();
-      } catch (e) {}
-      esRef.current = null;
+        const validToken = await getValidToken();
+        if (!active) return;
+
+        const es = new EventSource(
+          `${API_BASE}${relativeUrl}?token=${validToken}`
+        );
+        eventSourceRef.current = es;
+
+        es.onmessage = (e) => {
+          try {
+            onMessage(JSON.parse(e.data));
+          } catch (err) {
+            console.error('[SSE] Failed to parse message:', err);
+          }
+        };
+
+        es.onerror = async () => {
+          console.warn('[SSE] Connection error — trying refresh...');
+          es.close();
+          try {
+            await getValidToken();
+            if (active) setTimeout(connect, 2000); // delay before retry
+          } catch (err) {
+            console.error('Token refresh failed, logging out.');
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+          }
+        };
+      } catch (err) {
+        console.error('Initial SSE connect failed:', err);
+        setTimeout(connect, 2000); // retry if initial connect fails
+      }
+    }
+
+    connect();
+    return () => {
+      active = false;
+      eventSourceRef.current?.close();
     };
-  }, [url, onSnapshot, onPriceUpdate, onStatus]);
+  }, [relativeUrl, token, onMessage]);
 }
