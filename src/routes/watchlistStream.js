@@ -46,7 +46,7 @@ router.get('/stream', async (req, res) => {
     await sendSnapshotToUser(userId, { action: 'snapshot', watchlist: snapshotList });
 
     // Send dummy price updates every 5 seconds from user's real watchlist
-    const dummyPriceInterval = setInterval(() => {
+   /**  const dummyPriceInterval = setInterval(() => {
       if (tickers.length > 0) {
         const randomTicker = tickers[Math.floor(Math.random() * tickers.length)];
         const priceEvent = {
@@ -58,14 +58,14 @@ router.get('/stream', async (req, res) => {
         res.write(`event: price\ndata: ${JSON.stringify(priceEvent)}\n\n`);
         console.log("[DUMMY PRICE SENT]", priceEvent);
       }
-    }, 5000);
+    }, 5000); */
 
     // Heartbeat every 15s
     const hb = setInterval(() => res.write(`event: ping\ndata: {}\n\n`), 15000);
 
     req.on('close', () => {
       clearInterval(hb);
-      clearInterval(dummyPriceInterval);
+      //clearInterval(dummyPriceInterval);
       unregisterConnection(userId);
     });
 

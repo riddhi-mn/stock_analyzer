@@ -9,7 +9,7 @@ const { fetchQuote } = require('./services/finnHubservice');
 
 // routers
 const watchlistStreamRouter = require('./routes/watchlistStream');
-//const watchlistsRouter = require('./routes/watchlist'); // your REST watchlist routes
+const watchlistsRouter = require('./routes/watchlist'); // your REST watchlist routes
 const authRouter = require('./routes/auth');
 const meRouter = require('./routes/me');
 const priceRoutes = require('./routes/prices');
@@ -29,7 +29,7 @@ const auth = require('./middleware/auth'); // ✅ make sure it's the middleware 
 // mount API routes
 app.use('/api/prices', priceRoutes);
 
-//app.use('/api/watchlists', auth, watchlistsRouter);      // ✅ protect all REST watchlist endpoints
+app.use('/api/watchlists', auth, watchlistsRouter);      // ✅ protect all REST watchlist endpoints
 app.use('/api/watchlists', auth, watchlistStreamRouter);
 
 app.use('/api', authRouter);

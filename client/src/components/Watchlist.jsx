@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import useSSE from '../hooks/useSSE';
 import API from '../api/index';
+import { Link } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function Watchlist() {
@@ -68,8 +69,14 @@ export default function Watchlist() {
   }
 
   return (
-    <div style={{ maxWidth: 800, margin: '20px auto', padding: 12 }}>
-      <h1 style={{ fontSize: 20, marginBottom: 10 }}>My Watchlist</h1>
+    <div style={{
+    maxWidth: '800px',      // Sets a maximum width for your content
+    margin: '0 auto',         // Centers the container on the page
+    display: 'flex',          // Enables flexbox for easy alignment
+    flexDirection: 'column',  // Stacks the items vertically
+    alignItems: 'center'      // Centers the items inside the container
+  }}> 
+    <h1 style={{ fontSize: 20, marginBottom: 10 }}>My Watchlist</h1>
       <div style={{ marginBottom: 8 }}>
         Connection: <strong>{status.connected ? 'connected' : 'disconnected'}</strong>
       </div>
@@ -98,12 +105,13 @@ export default function Watchlist() {
             }}
           >
             {/* Ticker and Chart */}
+            <Link to={`/prices/${item.ticker}`} style={{ textDecoration: 'none', color: 'inherit' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div>
                 <strong>{item.ticker}</strong>
                 <div style={{ fontSize: 12, color: '#666' }}>
                   {item.created_at ? new Date(item.created_at).toLocaleString() : ''}
-                </div>
+                </div> 
               </div>
 
               {/* Inline mini chart */}
@@ -123,6 +131,7 @@ export default function Watchlist() {
                 </div>
               )}
             </div>
+            </Link>
 
             {/* Current price and remove */}
             <div style={{ textAlign: 'right' }}>

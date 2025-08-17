@@ -4,7 +4,7 @@ import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import PricePage from './components/PricePage'; 
 import { useAuth } from './hooks/useAuth';
-import Watchlist from './components/Watchlist';
+import Watchlist from './components/Watchlist.jsx';
 
 export default function App() {
   const { token } = useAuth();

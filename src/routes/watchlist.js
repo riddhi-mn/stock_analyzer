@@ -9,6 +9,7 @@ const { broadcastToUser, registerConnection, unregisterConnection } = require('.
 const router  = express.Router();
 
 // SSE stream endpoint
+/** 
 router.get('/stream', auth, (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -26,6 +27,7 @@ router.get('/stream', auth, (req, res) => {
     unregisterConnection(req.user.id, res);
   });
 });
+*/
 
 // POST — Add ticker to watchlist
 router.post('/', auth, async (req, res) => {
@@ -66,7 +68,7 @@ router.get('/', auth, async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const entries = await knex('watchlist')
+    const entries = await knex('watchlists')
       .where({ user_id: req.user.id })
       .select('ticker', 'created_at');
     return res.json(entries);
