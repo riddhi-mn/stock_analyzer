@@ -4,3 +4,6 @@ PERN stack project with unique user watchlists and real-time updates for America
 Also displays a 30-day moving average for data analytics.
 
 Uses JWT for authorization.
+
+Ongoing feature update: 
+Sentiment analysis for stocks using real-time news API.
